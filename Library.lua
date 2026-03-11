@@ -28,8 +28,8 @@ getgenv().Options = Options;
 local Library = {
 	Registry = {};
 	RegistryMap = {};
-
 	HudRegistry = {};
+	TextObjects = {}; -- for font updates
 
 	FontColor = Color3.fromRGB(255, 255, 255);
 	MainColor = Color3.fromRGB(28, 28, 28);
@@ -131,6 +131,7 @@ function Library:CreateLabel(Properties, IsHud)
 	});
 	Library:ApplyTextStroke(_Instance);
 	Library:AddToRegistry(_Instance, { TextColor3 = 'FontColor'; }, IsHud);
+	table.insert(Library.TextObjects, _Instance);
 	return Library:Create(_Instance, Properties);
 end;
 
@@ -991,6 +992,76 @@ function Library:UpdateKeybindList()
 	end
 end
 
+-- Font list for dropdown
+Library.Fonts = {
+	{ "Code", Enum.Font.Code },
+	{ "Arial", Enum.Font.Arial },
+	{ "SourceSans", Enum.Font.SourceSans },
+	{ "SourceSansBold", Enum.Font.SourceSansBold },
+	{ "SourceSansLight", Enum.Font.SourceSansLight },
+	{ "SourceSansItalic", Enum.Font.SourceSansItalic },
+	{ "SourceSansBoldItalic", Enum.Font.SourceSansBoldItalic },
+	{ "GothamBlack", Enum.Font.GothamBlack },
+	{ "GothamBold", Enum.Font.GothamBold },
+	{ "GothamLight", Enum.Font.GothamLight },
+	{ "GothamMedium", Enum.Font.GothamMedium },
+	{ "GothamBook", Enum.Font.GothamBook },
+	{ "Gotham", Enum.Font.Gotham },
+	{ "GothamMediumItalic", Enum.Font.GothamMediumItalic },
+	{ "GothamBlackItalic", Enum.Font.GothamBlackItalic },
+	{ "GothamBoldItalic", Enum.Font.GothamBoldItalic },
+	{ "GothamLightItalic", Enum.Font.GothamLightItalic },
+	{ "GothamBookItalic", Enum.Font.GothamBookItalic },
+	{ "GothamItalic", Enum.Font.GothamItalic },
+	{ "Roboto", Enum.Font.Roboto },
+	{ "RobotoMono", Enum.Font.RobotoMono },
+	{ "RobotoCondensed", Enum.Font.RobotoCondensed },
+	{ "RobotoCondensedLight", Enum.Font.RobotoCondensedLight },
+	{ "RobotoCondensedBold", Enum.Font.RobotoCondensedBold },
+	{ "RobotoCondensedItalic", Enum.Font.RobotoCondensedItalic },
+	{ "RobotoCondensedLightItalic", Enum.Font.RobotoCondensedLightItalic },
+	{ "RobotoCondensedBoldItalic", Enum.Font.RobotoCondensedBoldItalic },
+	{ "Ubuntu", Enum.Font.Ubuntu },
+	{ "Fantasy", Enum.Font.Fantasy },
+	{ "Antique", Enum.Font.Antique },
+	{ "Cartoon", Enum.Font.Cartoon },
+	{ "Classic", Enum.Font.Classic },
+	{ "Highway", Enum.Font.Highway },
+	{ "SciFi", Enum.Font.SciFi },
+	{ "Arcade", Enum.Font.Arcade },
+	{ "AmaticSC", Enum.Font.AmaticSC },
+	{ "Creepster", Enum.Font.Creepster },
+	{ "DenkOne", Enum.Font.DenkOne },
+	{ "Fondamento", Enum.Font.Fondamento },
+	{ "FredokaOne", Enum.Font.FredokaOne },
+	{ "IndieFlower", Enum.Font.IndieFlower },
+	{ "JosefinSans", Enum.Font.JosefinSans },
+	{ "Jura", Enum.Font.Jura },
+	{ "Kalam", Enum.Font.Kalam },
+	{ "LuckiestGuy", Enum.Font.LuckiestGuy },
+	{ "Merriweather", Enum.Font.Merriweather },
+	{ "Michroma", Enum.Font.Michroma },
+	{ "Nunito", Enum.Font.Nunito },
+	{ "Oswald", Enum.Font.Oswald },
+	{ "PatrickHand", Enum.Font.PatrickHand },
+	{ "PermanentMarker", Enum.Font.PermanentMarker },
+	{ "Quicksand", Enum.Font.Quicksand },
+	{ "Sarpanch", Enum.Font.Sarpanch },
+	{ "TitilliumWeb", Enum.Font.TitilliumWeb },
+}
+
+function Library:SetFont(fontName)
+	for _, pair in ipairs(self.Fonts) do
+		if pair[1] == fontName then
+			self.Font = pair[2]
+			for _, obj in ipairs(self.TextObjects) do
+				pcall(function() obj.Font = pair[2] end)
+			end
+			break
+		end
+	end
+end
+
 local NotifySettings = { BarPosition = { ["Top"] = UDim2.new(0, -1, 0, 0); ["Left"] = UDim2.new(0, -1, 0, -1); ["Right"] = UDim2.new(1, -2, 0, -1); ["Bottom"] = UDim2.new(0, -1, 1, -2); }; BarSize = { ["Top"] = UDim2.new(1, 3, 0, 2); ["Left"] = UDim2.new(0, 3, 1, 2); ["Right"] = UDim2.new(0, 3, 1, 2); ["Bottom"] = UDim2.new(1, 3, 0, 2); }; };
 local NotificationStyle = Library.NotificationStyle;
 local _char, _max = string.char, math.max;
@@ -1086,46 +1157,45 @@ function Library:CreateWindow(...)
 
 	-- Tab placement: "up", "down", "left", "right"
 	local TabsPlacement = Config.TabsPlacement or "up"
-	local TabArea, TabContainer;
+	local TabArea, TabContainer, TabScroller;
 
 	if TabsPlacement == "up" then
-		-- Up tabs (original)
-		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 0, 21); ZIndex = 1; Parent = MainSectionInner; });
+		TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 0, 21); CanvasSize = UDim2.new(0, 0, 0, 21); ScrollBarThickness = 0; ScrollingDirection = Enum.ScrollingDirection.X; ZIndex = 1; Parent = MainSectionInner; });
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Size = UDim2.new(0, 0, 1, 0); ZIndex = 1; Parent = TabScroller; });
 		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Horizontal; SortOrder = Enum.SortOrder.LayoutOrder; Parent = TabArea; });
-		-- Wrap in ScrollingFrame for horizontal scrolling
-		local TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 0, 21); CanvasSize = UDim2.new(0, 0, 0, 21); ScrollBarThickness = 0; ScrollingDirection = Enum.ScrollingDirection.X; ZIndex = 1; Parent = MainSectionInner; });
-		TabArea.Parent = TabScroller;
-		TabScroller.CanvasSize = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 0, 21);
-		TabArea.Size = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 1, 0);
+		tabLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			TabScroller.CanvasSize = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 0, 21);
+			TabArea.Size = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 1, 0);
+		end);
 		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 30); Size = UDim2.new(1, -16, 1, -38); ZIndex = 2; Parent = MainSectionInner; });
 	elseif TabsPlacement == "down" then
-		-- Down tabs (tabs at bottom)
-		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 1, -29); Size = UDim2.new(1, -16, 0, 21); ZIndex = 1; Parent = MainSectionInner; });
+		TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 1, -29); Size = UDim2.new(1, -16, 0, 21); CanvasSize = UDim2.new(0, 0, 0, 21); ScrollBarThickness = 0; ScrollingDirection = Enum.ScrollingDirection.X; ZIndex = 1; Parent = MainSectionInner; });
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Size = UDim2.new(0, 0, 1, 0); ZIndex = 1; Parent = TabScroller; });
 		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Horizontal; SortOrder = Enum.SortOrder.LayoutOrder; Parent = TabArea; });
-		local TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 1, -29); Size = UDim2.new(1, -16, 0, 21); CanvasSize = UDim2.new(0, 0, 0, 21); ScrollBarThickness = 0; ScrollingDirection = Enum.ScrollingDirection.X; ZIndex = 1; Parent = MainSectionInner; });
-		TabArea.Parent = TabScroller;
-		TabScroller.CanvasSize = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 0, 21);
-		TabArea.Size = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 1, 0);
+		tabLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			TabScroller.CanvasSize = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 0, 21);
+			TabArea.Size = UDim2.new(0, TabArea.UIListLayout.AbsoluteContentSize.X, 1, 0);
+		end);
 		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 1, -38); ZIndex = 2; Parent = MainSectionInner; });
 	elseif TabsPlacement == "left" then
-		-- Left tabs with vertical scrolling
-		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(0, 100, 1, -16); ZIndex = 1; Parent = MainSectionInner; });
+		TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(0, 100, 1, -16); CanvasSize = UDim2.new(0, 0, 0, 0); ScrollBarThickness = 3; ScrollingDirection = Enum.ScrollingDirection.Y; ZIndex = 1; Parent = MainSectionInner; });
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 0, 0); ZIndex = 1; Parent = TabScroller; });
 		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Left; Parent = TabArea; });
 		Library:Create('UIPadding', { PaddingBottom = UDim.new(0, 8), Parent = TabArea });
-		local TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(0, 100, 1, -16); CanvasSize = UDim2.new(0, 0, 0, 0); ScrollBarThickness = 3; ScrollingDirection = Enum.ScrollingDirection.Y; ZIndex = 1; Parent = MainSectionInner; });
-		TabArea.Parent = TabScroller;
-		TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y + 16);
-		TabArea.Size = UDim2.new(1, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y);
+		tabLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y + 16);
+			TabArea.Size = UDim2.new(1, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y);
+		end);
 		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 108, 0, 8); Size = UDim2.new(1, -116, 1, -16); ZIndex = 2; Parent = MainSectionInner; });
 	elseif TabsPlacement == "right" then
-		-- Right tabs with vertical scrolling
-		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(1, -108, 0, 8); Size = UDim2.new(0, 100, 1, -16); ZIndex = 1; Parent = MainSectionInner; });
+		TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(1, -108, 0, 8); Size = UDim2.new(0, 100, 1, -16); CanvasSize = UDim2.new(0, 0, 0, 0); ScrollBarThickness = 3; ScrollingDirection = Enum.ScrollingDirection.Y; ZIndex = 1; Parent = MainSectionInner; });
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Size = UDim2.new(1, 0, 0, 0); ZIndex = 1; Parent = TabScroller; });
 		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Left; Parent = TabArea; });
 		Library:Create('UIPadding', { PaddingBottom = UDim.new(0, 8), Parent = TabArea });
-		local TabScroller = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(1, -108, 0, 8); Size = UDim2.new(0, 100, 1, -16); CanvasSize = UDim2.new(0, 0, 0, 0); ScrollBarThickness = 3; ScrollingDirection = Enum.ScrollingDirection.Y; ZIndex = 1; Parent = MainSectionInner; });
-		TabArea.Parent = TabScroller;
-		TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y + 16);
-		TabArea.Size = UDim2.new(1, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y);
+		tabLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			TabScroller.CanvasSize = UDim2.new(0, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y + 16);
+			TabArea.Size = UDim2.new(1, 0, 0, TabArea.UIListLayout.AbsoluteContentSize.Y);
+		end);
 		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -116, 1, -16); ZIndex = 2; Parent = MainSectionInner; });
 	end
 
@@ -1137,15 +1207,12 @@ function Library:CreateWindow(...)
 		local TabButton
 		if TabsPlacement == "up" or TabsPlacement == "down" then
 			TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = UDim2.new(0, TabButtonWidth + 8 + 4, 1, 0); ZIndex = 1; Parent = TabArea; });
+			TabButtonLabel = Library:CreateLabel({ Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, -1); Text = Name; TextSize = 14; ZIndex = 1; Parent = TabButton; });
 		else -- left or right
-			TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = UDim2.new(1, 0, 0, 20); ZIndex = 1; Parent = TabArea; });
-			-- smaller font for side tabs
-			TabButtonLabel = Library:CreateLabel({ Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, -1); Text = Name; TextSize = 12; ZIndex = 1; Parent = TabButton; });
+			TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = UDim2.new(1, 0, 0, 25); ZIndex = 1; Parent = TabArea; });
+			TabButtonLabel = Library:CreateLabel({ Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, -1); Text = Name; TextSize = 14; ZIndex = 1; Parent = TabButton; });
 		end
 		Library:AddToRegistry(TabButton, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
-		if not TabButtonLabel then
-			TabButtonLabel = Library:CreateLabel({ Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, -1); Text = Name; ZIndex = 1; Parent = TabButton; });
-		end
 		local Blocker = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderSizePixel = 0; 
 			Position = (TabsPlacement == "up") and UDim2.new(0, 0, 1, 0) or (TabsPlacement == "down") and UDim2.new(0, 0, 0, 0) or (TabsPlacement == "left") and UDim2.new(1, 0, 0, 0) or (TabsPlacement == "right") and UDim2.new(0, 0, 0, 0);
 			Size = (TabsPlacement == "up" or TabsPlacement == "down") and UDim2.new(1, 0, 0, 1) or UDim2.new(0, 1, 1, 0);
@@ -1159,7 +1226,7 @@ function Library:CreateWindow(...)
 		for _, Side in next, { LeftSide, RightSide } do Side:WaitForChild('UIListLayout'):GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function() Side.CanvasSize = UDim2.fromOffset(0, Side.UIListLayout.AbsoluteContentSize.Y); end); end;
 		function Tab:ShowTab() for _, Tab in next, Window.Tabs do Tab:HideTab(); end; Blocker.BackgroundTransparency = 0; TabButton.BackgroundColor3 = Library.MainColor; Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'MainColor'; TabFrame.Visible = true; end;
 		function Tab:HideTab() Blocker.BackgroundTransparency = 1; TabButton.BackgroundColor3 = Library.BackgroundColor; Library.RegistryMap[TabButton].Properties.BackgroundColor3 = 'BackgroundColor'; TabFrame.Visible = false; end;
-		function Tab:SetLayoutOrder(Position) TabButton.LayoutOrder = Position; TabArea.Parent.UIListLayout:ApplyLayout(); end;
+		function Tab:SetLayoutOrder(Position) TabButton.LayoutOrder = Position; TabArea.UIListLayout:ApplyLayout(); end;
 		function Tab:AddGroupbox(Info)
 			local Groupbox = {};
 			local BoxOuter = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Inset; Size = UDim2.new(1, 0, 0, 507 + 2); ZIndex = 2; Parent = Info.Side == 1 and LeftSide or RightSide; });
