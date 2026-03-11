@@ -1000,7 +1000,6 @@ Library.Fonts = {
 	{ "SourceSansBold", Enum.Font.SourceSansBold },
 	{ "SourceSansLight", Enum.Font.SourceSansLight },
 	{ "SourceSansItalic", Enum.Font.SourceSansItalic },
-	{ "SourceSansBoldItalic", Enum.Font.SourceSansBoldItalic },
 	{ "GothamBlack", Enum.Font.GothamBlack },
 	{ "GothamBold", Enum.Font.GothamBold },
 	{ "GothamLight", Enum.Font.GothamLight },
