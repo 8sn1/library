@@ -888,11 +888,11 @@ do
 
 		function Dropdown:Display() local Values = Dropdown.Values; local Str = ''; if Info.Multi then for Idx, Value in next, Values do if Dropdown.Value[Value] then Str = Str .. Value .. ', '; end; end; Str = Str:sub(1, #Str - 2); else Str = Dropdown.Value or ''; end; ItemList.Text = (Str == '' and '--' or Str); end;
 		function Dropdown:GetActiveValues() if Info.Multi then local T = {}; for Value, Bool in next, Dropdown.Value do table.insert(T, Value); end; return T; else return Dropdown.Value and 1 or 0; end; end;
-		function Dropdown:BuildDropdownList() local Values = Dropdown.Values; local Buttons = {}; for _, Element in next, Scrolling:GetChildren() do if not Element:IsA('UIListLayout') then Element:Destroy(); end; end; local Count = 0; for Idx, Value in next, Values do local Table = {}; Count = Count + 1; local Button = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Middle; Size = UDim2.new(1, -1, 0, 20); ZIndex = 23; Active = true, Parent = Scrolling; }); Library:AddToRegistry(Button, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor'; }); local ButtonLabel = Library:CreateLabel({ Active = false; Size = UDim2.new(1, -6, 1, 0); Position = UDim2.new(0, 6, 0, 0); TextSize = 14; Text = Value; TextXAlignment = Enum.TextXAlignment.Left; ZIndex = 25; Parent = Button; }); Library:OnHighlight(Button, Button, { BorderColor3 = 'AccentColor', ZIndex = 24 }, { BorderColor3 = 'OutlineColor', ZIndex = 23 }); local Selected; if Info.Multi then Selected = Dropdown.Value[Value]; else Selected = Dropdown.Value == Value; end; function Table:UpdateButton() if Info.Multi then Selected = Dropdown.Value[Value]; else Selected = Dropdown.Value == Value; end; ButtonLabel.TextColor3 = Selected and Library.AccentColor or Library.FontColor; Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or 'FontColor'; end; ButtonLabel.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 then local Try = not Selected; if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then else if Info.Multi then Selected = Try; if Selected then Dropdown.Value[Value] = true; else Dropdown.Value[Value] = nil; end; else Selected = Try; if Selected then Dropdown.Value = Value; else Dropdown.Value = nil; end; for _, OtherButton in next, Buttons do OtherButton:UpdateButton(); end; end; Table:UpdateButton(); Dropdown:Display(); Library:SafeCallback(Dropdown.Callback, Dropdown.Value); Library:SafeCallback(Dropdown.Changed, Dropdown.Value); Library:AttemptSave(); end; end; end); Table:UpdateButton(); Dropdown:Display(); Buttons[Button] = Table; end; Scrolling.CanvasSize = UDim2.fromOffset(0, (Count * 20) + 1); local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1; RecalculateListSize(Y); end;
+		function Dropdown:BuildDropdownList() local Values = Dropdown.Values; local Buttons = {}; for _, Element in next, Scrolling:GetChildren() do if not Element:IsA('UIListLayout') then Element:Destroy(); end; end; local Count = 0; for Idx, Value in next, Values do local Table = {}; Count = Count + 1; local Button = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; BorderMode = Enum.BorderMode.Middle; Size = UDim2.new(1, -1, 0, 20); ZIndex = 23; Active = true, Parent = Scrolling; }); Library:AddToRegistry(Button, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor'; }); local ButtonLabel = Library:CreateLabel({ Active = false; Size = UDim2.new(1, -6, 1, 0); Position = UDim2.new(0, 6, 0, 0); TextSize = 14; Text = Value; TextXAlignment = Enum.TextXAlignment.Left; ZIndex = 25; Parent = Button; }); Library:OnHighlight(Button, Button, { BorderColor3 = 'AccentColor', ZIndex = 24 }, { BorderColor3 = 'OutlineColor', ZIndex = 23 }); local Selected; if Info.Multi then Selected = Dropdown.Value[Value]; else Selected = Dropdown.Value == Value; end; function Table:UpdateButton() if Info.Multi then Selected = Dropdown.Value[Value]; else Selected = Dropdown.Value == Value; end; ButtonLabel.TextColor3 = Selected and Library.AccentColor or Library.FontColor; Library.RegistryMap[ButtonLabel].Properties.TextColor3 = Selected and 'AccentColor' or 'FontColor'; end; ButtonLabel.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 then local Try = not Selected; if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then else if Info.Multi then Selected = Try; if Selected then Dropdown.Value[Value] = true; else Dropdown.Value[Value] = nil; end; else Selected = Try; if Selected then Dropdown.Value = Value; else Dropdown.Value = nil; end; for _, OtherButton in next, Buttons do OtherButton:UpdateButton(); end; end; Table:UpdateButton(); Dropdown:Display(); Library:SafeCallback(Dropdown.Callback, Dropdown.Value); Library:SafeCallback(Dropdown.Changed, Dropdown.Value); Library:UpdateDependencyBoxes(); Library:AttemptSave(); end; end; end); Table:UpdateButton(); Dropdown:Display(); Buttons[Button] = Table; end; Scrolling.CanvasSize = UDim2.fromOffset(0, (Count * 20) + 1); local Y = math.clamp(Count * 20, 0, MAX_DROPDOWN_ITEMS * 20) + 1; RecalculateListSize(Y); end;
 		function Dropdown:SetValues(NewValues) if NewValues then Dropdown.Values = NewValues; end; Dropdown:BuildDropdownList(); end;
 		local _visible = false; function Dropdown:OpenDropdown() _visible = true; ListOuter.Visible = true; Library.OpenedFrames[ListOuter] = true; DropdownArrow.Rotation = 180; end; function Dropdown:CloseDropdown() _visible = false; ListOuter.Visible = false; Library.OpenedFrames[ListOuter] = nil; DropdownArrow.Rotation = 0; end;
 		function Dropdown:OnChanged(Func) Dropdown.Changed = Func; Func(Dropdown.Value); end;
-		function Dropdown:SetValue(Val) if Dropdown.Multi then local nTable = {}; if (type(Val) == "string") then Val = {[Val] = true}; end; for Value, Bool in next, Val do if Dropdown.Illegal or table.find(Dropdown.Values, Value) then nTable[Value] = true end; end; Dropdown.Value = nTable; else if (not Val) then Dropdown.Value = nil; elseif Dropdown.Illegal or table.find(Dropdown.Values, Val) then Dropdown.Value = Val; end; end; Dropdown:BuildDropdownList(); Library:SafeCallback(Dropdown.Callback, Dropdown.Value); Library:SafeCallback(Dropdown.Changed, Dropdown.Value); end;
+		function Dropdown:SetValue(Val) if Dropdown.Multi then local nTable = {}; if (type(Val) == "string") then Val = {[Val] = true}; end; for Value, Bool in next, Val do if Dropdown.Illegal or table.find(Dropdown.Values, Value) then nTable[Value] = true end; end; Dropdown.Value = nTable; else if (not Val) then Dropdown.Value = nil; elseif Dropdown.Illegal or table.find(Dropdown.Values, Val) then Dropdown.Value = Val; end; end; Dropdown:BuildDropdownList(); Library:SafeCallback(Dropdown.Callback, Dropdown.Value); Library:SafeCallback(Dropdown.Changed, Dropdown.Value); Library:UpdateDependencyBoxes(); Library:AttemptSave(); end;
 		function Dropdown:Remove() for _, blank in Blanks do blank:Destroy(); end; Options[Idx] = nil; DropdownOuter:Destroy(); table.clear(Dropdown); end;
 		DropdownOuter.InputBegan:Connect(function(Input) if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then if ListOuter.Visible then Dropdown:CloseDropdown(); else Dropdown:OpenDropdown(); end; end; end);
 		Library:BindToInput(Enum.UserInputType.MouseButton1, function() if (not _visible) then return; end; local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize; if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then Dropdown:CloseDropdown(); end; end);
@@ -950,7 +950,10 @@ do
 		for _, child in ipairs(Groupbox.Container.Parent:GetChildren()) do
 			if child:IsA('Frame') and child.ZIndex == 4 then BoxInner = child; break end
 		end
-		if not BoxInner then return end
+		-- If not found, return a dummy control object that does nothing (prevents errors)
+		if not BoxInner then
+			return { SetLocked = function() end, Toggle = function() end }
+		end
 
 		local Overlay = Library:Create('Frame', {
 			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
@@ -1125,29 +1128,49 @@ function Library:CreateWindow(...)
 	Library:AddToRegistry(MainSectionOuter, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
 	local MainSectionInner = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Color3.new(0, 0, 0); BorderMode = Enum.BorderMode.Inset; Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, 0); ZIndex = 1; Parent = MainSectionOuter; });
 	Library:AddToRegistry(MainSectionInner, { BackgroundColor3 = 'BackgroundColor'; });
-	local TabsLeft = Config.TabsLeft or false;
+
+	-- Tab placement: "up", "down", "left", "right"
+	local TabsPlacement = Config.TabsPlacement or "up"
 	local TabArea, TabContainer;
-	if TabsLeft then
-		-- Left side tabs with improved spacing
+	local tabSize, contentOffset, contentSize
+
+	if TabsPlacement == "up" then
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 0, 21); ZIndex = 1; Parent = MainSectionInner; });
+		Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Horizontal; SortOrder = Enum.SortOrder.LayoutOrder; Parent = TabArea; });
+		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 30); Size = UDim2.new(1, -16, 1, -38); ZIndex = 2; Parent = MainSectionInner; });
+	elseif TabsPlacement == "down" then
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 1, -29); Size = UDim2.new(1, -16, 0, 21); ZIndex = 1; Parent = MainSectionInner; });
+		Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Horizontal; SortOrder = Enum.SortOrder.LayoutOrder; Parent = TabArea; });
+		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 1, -38); ZIndex = 2; Parent = MainSectionInner; });
+	elseif TabsPlacement == "left" then
 		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(0, 100, 1, -16); ZIndex = 1; Parent = MainSectionInner; });
 		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Left; Parent = TabArea; });
 		Library:Create('UIPadding', { PaddingBottom = UDim.new(0, 8), Parent = TabArea }); -- bottom padding to prevent last tab touching edge
 		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 108, 0, 8); Size = UDim2.new(1, -116, 1, -16); ZIndex = 2; Parent = MainSectionInner; });
-	else
-		-- Top tabs (original)
-		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -16, 0, 21); ZIndex = 1; Parent = MainSectionInner; });
-		Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Horizontal; SortOrder = Enum.SortOrder.LayoutOrder; Parent = TabArea; });
-		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 30); Size = UDim2.new(1, -16, 1, -38); ZIndex = 2; Parent = MainSectionInner; });
+	elseif TabsPlacement == "right" then
+		TabArea = Library:Create('Frame', { BackgroundTransparency = 1; Position = UDim2.new(1, -108, 0, 8); Size = UDim2.new(0, 100, 1, -16); ZIndex = 1; Parent = MainSectionInner; });
+		local tabLayout = Library:Create('UIListLayout', { Padding = UDim.new(0, Config.TabPadding); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder; HorizontalAlignment = Enum.HorizontalAlignment.Left; Parent = TabArea; });
+		Library:Create('UIPadding', { PaddingBottom = UDim.new(0, 8), Parent = TabArea }); -- bottom padding
+		TabContainer = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderColor3 = Library.OutlineColor; Position = UDim2.new(0, 8, 0, 8); Size = UDim2.new(1, -116, 1, -16); ZIndex = 2; Parent = MainSectionInner; });
 	end
+
 	Library:AddToRegistry(TabContainer, { BackgroundColor3 = 'MainColor'; BorderColor3 = 'OutlineColor'; });
 	function Window:SetWindowTitle(Title) WindowLabel.Text = Title; end;
 	function Window:AddTab(Name)
 		local Tab = { Groupboxes = {}; Tabboxes = {}; };
 		local TabButtonWidth = Library:GetTextBounds(Name, Library.Font, 16);
-		local TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = TabsLeft and UDim2.new(1, 0, 0, 25) or UDim2.new(0, TabButtonWidth + 8 + 4, 1, 0); ZIndex = 1; Parent = TabArea; });
+		local TabButton
+		if TabsPlacement == "up" or TabsPlacement == "down" then
+			TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = UDim2.new(0, TabButtonWidth + 8 + 4, 1, 0); ZIndex = 1; Parent = TabArea; });
+		else -- left or right
+			TabButton = Library:Create('Frame', { BackgroundColor3 = Library.BackgroundColor; BorderColor3 = Library.OutlineColor; Size = UDim2.new(1, 0, 0, 25); ZIndex = 1; Parent = TabArea; });
+		end
 		Library:AddToRegistry(TabButton, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; });
 		local TabButtonLabel = Library:CreateLabel({ Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, -1); Text = Name; ZIndex = 1; Parent = TabButton; });
-		local Blocker = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderSizePixel = 0; Position = TabsLeft and UDim2.new(1, 0, 0, 0) or UDim2.new(0, 0, 1, 0); Size = TabsLeft and UDim2.new(0, 1, 1, 0) or UDim2.new(1, 0, 0, 1); BackgroundTransparency = 1; ZIndex = 3; Parent = TabButton; });
+		local Blocker = Library:Create('Frame', { BackgroundColor3 = Library.MainColor; BorderSizePixel = 0; 
+			Position = (TabsPlacement == "up") and UDim2.new(0, 0, 1, 0) or (TabsPlacement == "down") and UDim2.new(0, 0, 0, 0) or (TabsPlacement == "left") and UDim2.new(1, 0, 0, 0) or (TabsPlacement == "right") and UDim2.new(0, 0, 0, 0);
+			Size = (TabsPlacement == "up" or TabsPlacement == "down") and UDim2.new(1, 0, 0, 1) or UDim2.new(0, 1, 1, 0);
+			BackgroundTransparency = 1; ZIndex = 3; Parent = TabButton; });
 		Library:AddToRegistry(Blocker, { BackgroundColor3 = 'MainColor'; });
 		local TabFrame = Library:Create('Frame', { Name = 'TabFrame', BackgroundTransparency = 1; Position = UDim2.new(0, 0, 0, 0); Size = UDim2.new(1, 0, 1, 0); Visible = false; ZIndex = 2; Parent = TabContainer; });
 		local LeftSide = Library:Create('ScrollingFrame', { BackgroundTransparency = 1; BorderSizePixel = 0; Position = UDim2.new(0, 8 - 1, 0, 8 - 1); Size = UDim2.new(0.5, -12 + 2, 0, Library.UISize.Height.Offset - 91); CanvasSize = UDim2.new(0, 0, 0, 0); BottomImage = ''; TopImage = ''; ScrollBarThickness = 0; ZIndex = 2; Parent = TabFrame; });
